@@ -1,24 +1,72 @@
-import logo from './logo.svg';
-import './App.css';
+import { createContext, useEffect, useState } from "react";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import AddMember from "./components/AddMembers/AddMember";
+import Dashboard from "./components/Dashboard/Dashboard";
+import Members from "./components/Members/Members";
+import SideBar from "./components/SideBar/SideBar";
+import Update from "./components/Update/Update";
 
-function App() {
+export const MembersContext = createContext();
+export const MethodContext = createContext()
+const  App = () => {
+  const [members, setMembers] = useState([]);
+
+    useEffect( () => {
+        fetch('http://localhost:8000/members')
+        .then(res => res.json())
+        .then( data => {
+            setMembers(data)
+        })
+    }, []);
+
+    const handleDelete = id => {
+      const url = `http://localhost:8000/members/${id}`
+     const proceed = window.confirm('Are you sure want to delete ??');
+     if(proceed) {
+          fetch(url, {
+              method:'DELETE'
+          })
+          .then( res => res.json())
+          .then( data => {
+              if(data.deletedCount > 0) {
+                  alert('documents Successfully Deleted');
+                  const remainingMembers = members.filter( member => member._id !== id);
+                  setMembers(remainingMembers)
+              }
+          })
+     }
+  }
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+    <MethodContext.Provider value={handleDelete}>
+    <MembersContext.Provider value={[members]}>
+      <Router>
+        <div style={{display:'flex'}}>
+          <SideBar />
+          <Switch>
+            <Route exact path='/'>
+              <Dashboard />
+            </Route>
+            <Route  path='/dashboard'>
+              <Dashboard />
+            </Route>
+            <Route exact path='/members'>
+              <Members />
+            </Route>
+            <Route exact path='/members/update/:id'>
+              <Update />
+            </Route>
+            <Route path='/addmember'>
+              <AddMember />
+            </Route>
+          </Switch>
+        </div>
+      </Router>
+      </MembersContext.Provider>
+      </MethodContext.Provider>
+    </>
   );
 }
 
